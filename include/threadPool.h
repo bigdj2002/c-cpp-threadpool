@@ -47,6 +47,16 @@ ThreadPool::ThreadPool(size_t num_threads)
   }
 }
 
+ThreadPool::~ThreadPool()
+{
+  stop_all = true;
+  cv_job_q_.notify_all();
+  for (auto &t : worker_threads_)
+  {
+    t.join();
+  }
+}
+
 void ThreadPool::WorkerThread()
 {
   while (true)
@@ -67,15 +77,6 @@ void ThreadPool::WorkerThread()
   }
 }
 
-ThreadPool::~ThreadPool()
-{
-  stop_all = true;
-  cv_job_q_.notify_all();
-  for (auto &t : worker_threads_)
-  {
-    t.join();
-  }
-}
 template <class F, class... Args>
 std::future<typename std::result_of<F(Args...)>::type> ThreadPool::EnqueueJob(
     F &&f, Args &&...args)
