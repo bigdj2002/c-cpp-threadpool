@@ -1,10 +1,9 @@
-#ifndef THREADPOOL_H
-#define THREADPOOL_H
+#ifndef THREADPOOL_V1_H
+#define THREADPOOL_V1_H
 
 #include <condition_variable>
 #include <cstdio>
 #include <functional>
-#include <future>
 #include <mutex>
 #include <queue>
 #include <thread>
@@ -15,10 +14,9 @@ class ThreadPool
 public:
   ThreadPool(size_t num_threads);
   ~ThreadPool();
+
   // job 을 추가한다.
-  template <class F, class... Args>
-  std::future<typename std::result_of<F(Args...)>::type> EnqueueJob(
-      F &&f, Args &&...args);
+  void EnqueueJob(std::function<void()> job);
 
 private:
   // 총 Worker 쓰레드의 개수.
@@ -30,8 +28,10 @@ private:
   // 위의 job 큐를 위한 cv 와 m.
   std::condition_variable cv_job_q_;
   std::mutex m_job_q_;
+
   // 모든 쓰레드 종료
   bool stop_all;
+
   // Worker 쓰레드
   void WorkerThread();
 };
@@ -51,6 +51,7 @@ ThreadPool::~ThreadPool()
 {
   stop_all = true;
   cv_job_q_.notify_all();
+
   for (auto &t : worker_threads_)
   {
     t.join();
@@ -68,34 +69,43 @@ void ThreadPool::WorkerThread()
     {
       return;
     }
+
     // 맨 앞의 job 을 뺀다.
     std::function<void()> job = std::move(jobs_.front());
     jobs_.pop();
     lock.unlock();
+
     // 해당 job 을 수행한다 :)
     job();
   }
 }
 
-template <class F, class... Args>
-std::future<typename std::result_of<F(Args...)>::type> ThreadPool::EnqueueJob(
-    F &&f, Args &&...args)
+void ThreadPool::EnqueueJob(std::function<void()> job)
 {
   if (stop_all)
   {
     throw std::runtime_error("ThreadPool 사용 중지됨");
   }
-  using return_type = typename std::result_of<F(Args...)>::type;
-  auto job = std::make_shared<std::packaged_task<return_type()>>(
-      std::bind(std::forward<F>(f), std::forward<Args>(args)...));
-  std::future<return_type> job_result_future = job->get_future();
   {
     std::lock_guard<std::mutex> lock(m_job_q_);
-    jobs_.push([job]()
-               { (*job)(); });
+    jobs_.push(std::move(job));
   }
   cv_job_q_.notify_one();
-  return job_result_future;
 }
+
+/*
+ * @author bigdj2002@naver.com
+ * INFO: Use below code with threadPool_v1.h in main.cpp
+ */
+
+// int main()
+// {
+//   ThreadPool::ThreadPool pool(3);
+//   for (int i = 0; i < 10; i++)
+//   {
+//     pool.EnqueueJob([i]()
+//                     { work(i % 3 + 1, i); });
+//   }
+// }
 
 #endif
