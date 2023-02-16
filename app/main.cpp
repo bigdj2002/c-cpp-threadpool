@@ -1,9 +1,11 @@
+#include "threadPool_v1.h"
+#include "threadPool_v2.h"
 #include "threadPool_v3.h"
 #include "add.h"
 
 int main()
 {
-  ThreadPool pool(3);
+  tp3::ThreadPool pool(3);
   std::vector<std::future<int>> futures;
   for (int i = 0; i < 10; i++)
   {
