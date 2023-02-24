@@ -1,6 +1,6 @@
-#ifndef THREADOBJECT_H
-#define THREADOBJECT_H
+#pragma once
 
+#include <iostream>
 #include <memory>
 #include <functional>
 
@@ -65,5 +65,3 @@ public:
 //     for (auto& e : vec)
 //         e.run();
 // }
-
-#endif
