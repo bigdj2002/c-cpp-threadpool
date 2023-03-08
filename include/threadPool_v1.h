@@ -1,6 +1,7 @@
 #ifndef THREADPOOL_V1_H
 #define THREADPOOL_V1_H
 
+#include <iostream>
 #include <condition_variable>
 #include <cstdio>
 #include <functional>
@@ -17,24 +18,18 @@ namespace tp1
     ThreadPool(size_t num_threads);
     ~ThreadPool();
 
-    // job 을 추가한다.
     void EnqueueJob(std::function<void()> job);
 
   private:
-    // 총 Worker 쓰레드의 개수.
     size_t num_threads_;
-    // Worker 쓰레드를 보관하는 벡터.
     std::vector<std::thread> worker_threads_;
-    // 할일들을 보관하는 job 큐.
     std::queue<std::function<void()>> jobs_;
-    // 위의 job 큐를 위한 cv 와 m.
+
     std::condition_variable cv_job_q_;
     std::mutex m_job_q_;
 
-    // 모든 쓰레드 종료
     bool stop_all;
 
-    // Worker 쓰레드
     void WorkerThread();
   };
 
@@ -72,12 +67,10 @@ namespace tp1
         return;
       }
 
-      // 맨 앞의 job 을 뺀다.
       std::function<void()> job = std::move(jobs_.front());
       jobs_.pop();
       lock.unlock();
 
-      // 해당 job 을 수행한다 :)
       job();
     }
   }
@@ -96,9 +89,9 @@ namespace tp1
   }
 }
 
-/*
- * @author bigdj2002@naver.com
- * INFO: Use below code with threadPool_v1.h in main.cpp
+/**
+ * \author: bigdj2002@naver.com
+ * \brief: Use below code with threadPool_v1.h in main.cpp
  */
 
 // int main()

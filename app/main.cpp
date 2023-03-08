@@ -2,7 +2,7 @@
 
 int main()
 {
-  tp3::ThreadPool pool(3);
+  tp2::ThreadPool pool(3);
   std::vector<std::future<int>> futures;
   for (int i = 0; i < 10; i++)
   {
